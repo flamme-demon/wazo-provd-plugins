@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import absolute_import
@@ -134,6 +134,8 @@ class TestPlugin(unittest.TestCase):
 
         self._template_helper_patcher = patch('provd.plugins.TemplatePluginHelper')
         self.template_plugin_helper = self._template_helper_patcher.start()
+        self.template_plugin_helper.get_template = MagicMock()
+        self.template_plugin_helper.dump = MagicMock()
         original_template_helper = common.TemplatePluginHelper
 
         def restore_template_helper():
@@ -141,6 +143,9 @@ class TestPlugin(unittest.TestCase):
 
         self.addCleanup(restore_template_helper)
         self.addCleanup(self._template_helper_patcher.stop)
+
+        def execfile_(filename, common_globals):
+            common_globals['BaseYealinkPlugin'] = BaseYealinkPlugin
 
     def test_init(self):
         plugin = BaseYealinkPlugin(self.app, 'test_dir', MagicMock(), MagicMock())
@@ -153,7 +158,10 @@ class TestPlugin(unittest.TestCase):
         self.fetchfw.assert_called_once_with('test_dir', sentinel.fetchfw_downloaders)
 
     def test_common_configure(self):
-        pass
+        plugin = self.yealink_plugin(self.app, 'test_dir', MagicMock(), MagicMock())
+        plugin.configure_common(MagicMock())
+        self.template_plugin_helper.get_template.assert_called()
+        self.template_plugin_helper.dump.assert_called()
 
     def test_configure(self):
         pass
